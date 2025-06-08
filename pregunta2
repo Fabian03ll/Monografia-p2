@@ -3,28 +3,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
-# --- Ruta al archivo SIDPOL ---
 archivo_sidpol = r"C:\Users\WINDOWS 2024\Desktop\Monografia\Base de datos SIDPOL a abril del 2025 .csv"
 
-# --- Carga directa con codificación 'latin-1' para evitar errores ---
+
 df = pd.read_csv(archivo_sidpol, sep=';', encoding='latin-1', engine='python')
-
-# --- Mostrar las columnas disponibles ---
+#ruta de archivo, caracter de separacion de columnas, codificacion de caracteres de archivo a nbinarios, motor de lectura
+#adicional a esto, usa la primera fila como nombres de columna(por defecto), vuelve etiquetas a la primera fila
 print("Columnas disponibles en el archivo:")
-print(df.columns.tolist())
+print(df.columns.tolist()) #muestra la lista de etiquetas(primera fila)
 
-# --- Filtrar solo LIMA METROPOLITANA ---
-df = df[df['DPTO_HECHO_NEW'].str.upper() == 'LIMA METROPOLITANA']
+df = df[df['DPTO_HECHO_NEW'].str.upper() == 'LIMA METROPOLITANA'] #filtra los que son iguales a 'LIMA METROPOLITANA'
 
-# --- Agrupar por año y tipo de delito, sumando los valores reales ---
 df_grouped = df.groupby(['ANIO', 'ES_DELITO_x'])['n_dist_ID_DGC'].sum().unstack(fill_value=0)
+#tener solo en cuenta combinaciones de anio y tipo de delito
 
-# --- Calcular el total de delitos por año ---
+#suma de todos los tipos de delitos
 df_grouped['TOTAL_DELITOS'] = df_grouped.get('1.Delitos', 0) + \
                               df_grouped.get('2.Faltas', 0) + \
                               df_grouped.get('3. Niños y adolescentes', 0) + \
                               df_grouped.get('4.Violencia contra la mujer e int', 0) + \
                               df_grouped.get('Otros', 0)
+
+print(df_grouped)
 
 # --- Graficar delitos totales por año en barras ---
 plt.figure(figsize=(10, 6))
