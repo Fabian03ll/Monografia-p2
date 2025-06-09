@@ -1,0 +1,61 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+archivo_sidpol = r"C:\Users\WINDOWS 2024\Desktop\Monografia\Base de datos SIDPOL a abril del 2025 .csv"
+
+df = pd.read_csv(archivo_sidpol, sep=';', encoding='latin-1', engine='python')
+#ruta de archivo, caracter de separacion de columnas, codificacion de caracteres de archivo a nbinarios, motor de lectura
+#adicional a esto, usa la primera fila como nombres de columna(por defecto), vuelve etiquetas a la primera fila
+
+print("Columnas disponibles en el archivo:")
+print(df.columns.tolist())
+
+#actualiza el dataframe 
+df = df[df['DPTO_HECHO_NEW'].str.upper() == 'LIMA METROPOLITANA']
+
+#Agrupar por año y tipo de delito, ademas de sumarlo, ignorando asi los meses, unstack(fill_value=0) sirve para rellenar espacios vacios con 0s
+#Reagrupamos con el indice principal como "anio"
+df_grouped = df.groupby(['ANIO', 'ES_DELITO_x'])['n_dist_ID_DGC'].sum().unstack(fill_value=0)
+
+print(df_grouped)
+
+print('\n')
+#Calcular el total de delitos por año, get para llenar espacios vacios de 0s
+#Creamos una columna llamada TOTAL_DELITOS para llenarlo con el resultado de la suma
+df_grouped['TOTAL_DELITOS'] = df_grouped.get('1.Delitos', 0) + df_grouped.get('2.Faltas', 0) + df_grouped.get('3. Niños y adolescentes', 0) + df_grouped.get('4.Violencia contra la mujer e int', 0) + df_grouped.get('Otros', 0)
+
+print(df_grouped)
+
+# Graficar delitos totales por año en barras
+plt.figure(figsize=(10, 6))#tamanio ancho y largo en pulgadas
+plt.bar(df_grouped.index, df_grouped['TOTAL_DELITOS'], color='blue'),#definir eje x con las etiquetas o indices de anios 
+plt.title('Delitos Totales en Lima Metropolitana por Año')
+plt.xlabel('Año')
+plt.ylabel('Cantidad de Delitos')
+plt.grid(axis='y') #Agregar linea horizontales alineadas al eje Y
+plt.show()
+
+#Regresión lineal para predecir delitos 
+x = df_grouped.index.values.reshape(-1, 1)  # sacamos la matriz Anios, reshape(-1, 1): para convertilo en matriz 
+y = df_grouped['TOTAL_DELITOS'].values.reshape(-1, 1)
+
+modelo = LinearRegression()
+modelo.fit(x, y)
+#se usa el metodo por defecto de Ordinary Least Squares, OLS
+# Predicción para años futuros
+anios_futuros = np.array(range(2025, 2031)).reshape(-1, 1)
+predicciones = modelo.predict(anios_futuros)
+
+# --- Graficar predicción ---
+plt.figure(figsize=(10, 6))
+plt.bar(df_grouped.index, df_grouped['TOTAL_DELITOS'], color='green', label='Datos Reales')
+plt.plot(anios_futuros, predicciones, marker='*', linestyle='--', color='red', label='Predicción')#grafico de lineas
+plt.title('Proyección de Delitos Totales en Lima Metropolitana')
+plt.xlabel('Año')
+plt.ylabel('Cantidad de Delitos')
+plt.legend()#mostrar leyenda
+plt.grid(axis='y')
+plt.grid(axis='x')
+plt.show()
